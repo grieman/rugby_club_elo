@@ -72,4 +72,7 @@ year_1.make_games(all_teams)
 
 
 for name, match in year_1.games.items():
-    print(match.home)
+    match.process_game()
+
+for club in all_teams.teams.values():
+    print(club.elo_history)

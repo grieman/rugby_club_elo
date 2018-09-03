@@ -6,8 +6,16 @@ class club():
 
     def __init__(self, alias):
         self.elo_score = 1500
-        self.elo_history = []
+        self.elo_history = [self.elo_score]
+        self.game_history = ["First Appearance"]
         self.alias = alias
+    
+    def add_game(self, match, elo_change):
+        self.game_history.append(match)
+        self.elo_score += elo_change
+        self.elo_history.append(self.elo_score)
+
+
     
 class team_dict():
 
@@ -30,7 +38,7 @@ class game():
         self.away_score = int(away_score)
         if self.home_score == self.away_score:
             self.winner = home_club if home_club.elo_score < away_club.elo_score else away_club
-        else if self.home_score > self.away_score:
+        elif self.home_score > self.away_score:
             self.winner = home_club
         else:
             self.winner = away_club
@@ -41,6 +49,9 @@ class game():
         self.prediction = 1 / (10 ** (-(self.home.elo_score - self.away.elo_score)/400) + 1)
         self.elo_change = (np.log(self.point_diff  + 1)) * score_factor
 
+    def process_game(self):
+            self.winner.add_game(self, self.elo_change)
+            self.loser.add_game(self, (self.elo_change * -1))
 
 class schedule():
 
