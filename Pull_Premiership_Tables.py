@@ -109,7 +109,7 @@ for year in range(1987, 1997):
 
 
 
-for year in range(1997, 2018):
+for year in range(1997, 2020):
     if (year == 1999):
         url = "https://en.wikipedia.org/wiki/" + str(year) + "-" + str(2000) + "_Premiership_Rugby#Fixtures"
     elif (year >= 2010):
@@ -132,6 +132,7 @@ for year in range(1997, 2018):
     end = next(i for i in range(3, len(rows)) if str(rows[i])[0:23] == '<table class="wikitable')
     rows = rows[3:end]
     
+    ## Remove rows with tables that we don't want
     rows = [rows[i] for i in range(0, len(rows)) if str(rows[i])[0:20] != '<table width="100%">']
     rows = [rows[i] for i in range(0, len(rows)) if str(rows[i])[0:20] != '<table cellpadding="']
     rows = [rows[i] for i in range(0, len(rows)) if str(rows[i])[0:20] != '<table align="center']
@@ -140,8 +141,12 @@ for year in range(1997, 2018):
     rows = [rows[i] for i in range(0, len(rows)) if str(rows[i])[0:20] != '<table class="multic']
     rows = [rows[i] for i in range(0, len(rows)) if str(rows[i])[0:20] != '<table style="width:']
     rows = [rows[i] for i in range(0, len(rows)) if str(rows[i])[0:20] != '<table style="font-s']
+    rows = [rows[i] for i in range(0, len(rows)) if str(rows[i])[0:20] != '<table style="border']
 
     dates = [rows[i].find('td').find('div').contents[0] for i in range(0, len(rows),3)]
+    dates = [x.contents[0] if len(x) == 1 else x for x in dates] ## removes links in dates, like Big Game
+
+
     home_team = []
     home_score = []
     away_score = []
@@ -149,15 +154,21 @@ for year in range(1997, 2018):
     for i in range(1, len(rows), 3):
         content = rows[i].find_all('th')
         if (str(content[1].contents[0])[0:8] == '<a href='):
+            ## If there is a link, not a score
             scores = [-1, -1]
         else:
-            scores = content[1].contents[0].split('\n',1)[0].replace('–','-').split('-',1)
-            scores = [[int(s) for s in score.split() if s.isdigit()] for score in scores]
+            scores = content[1].contents[0].split('\n',1)[0]#.replace('–','-').split('-',1)
+            scores = re.sub("[^0-9]", " ", scores)
+            scores = [int(s) for s in scores.split() if s.isdigit()]
+            if len(scores) == 0:
+                ## If the score field has something like P-P
+                scores =  [-1, -1]
 
         ## NEED TO ENSURE GETTING TEAM NAME
         try:
             home = content[0].contents[0].contents[0].contents[0]
             if((str(home) == '(BP)')|(str(home) == '(1 BP)')|(str(home) == '(2 BP)')|(str(home) == '(BP) ')|(str(home) == '(1 BP) ')|(str(home) == '(2 BP) ')):
+                ## Look in secondary location if bonus points are here
                 home = content[0].contents[0].contents[2].contents[0]
         except:
             home = content[0].contents[0].contents[0]
@@ -170,7 +181,10 @@ for year in range(1997, 2018):
                 away = content[2].contents[0].contents[2].contents[0]
         except:
             away = content[2].contents[0].contents[0]
+            if (str(away)[0] == "("):
+                away = content[2].contents[0].contents[1].contents[0]
         
+        ## Get the first score element for home, and second for away
         try:
             score_h = scores[0][0]
         except:
@@ -181,9 +195,9 @@ for year in range(1997, 2018):
         except:
             score_a = scores[1]
 
+        # Clean the names and append
         home = re.sub("\(.*\)|\s-\s.*", "", home)
         away = re.sub("\(.*\)|\s-\s.*", "", away)
-
         home_score.append(score_h)
         away_score.append(score_a)
         home_team.append(home)
